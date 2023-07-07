@@ -72,10 +72,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     );
                   default:
-                    if (snapshot.hasError)
+                    if (snapshot.hasError) {
                       return Container();
-                    else
-                      _creatGifTable(context, snapshot);
+                    } else {
+                      return _creatGifTable(context, snapshot);
+                    }
                 }
               },
             ),
@@ -84,7 +85,8 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-  _creatGifTable(BuildContext context, AsyncSnapshot snapshot){
-    
+
+  Widget _creatGifTable(BuildContext context, AsyncSnapshot snapshot) {
+    return Container();
   }
 }
