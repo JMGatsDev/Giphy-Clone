@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:gif/constants.dart';
 import 'package:http/http.dart' as http;
@@ -12,7 +11,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final String _search = "";
+  late String _search = "";
   int? _offser;
 
   Future<Map> _getGifs() async {
@@ -21,7 +20,7 @@ class _HomeScreenState extends State<HomeScreen> {
       response = await http.get(Uri.parse(Constants.getTrading));
     } else {
       response = await http.get(Uri.parse(
-          "https://api.giphy.com/v1/gifs/search?api_key=Fga2SHVIo5A2NFKIYaJuSfyW18vOl2l8&q=$_search&limit=20&offset=$_offser&rating=g&lang=pt&bundle=messaging_non_clips"));
+          "https://api.giphy.com/v1/gifs/search?api_key=Fga2SHVIo5A2NFKIYaJuSfyW18vOl2l8&q=$_search&limit=19&offset=$_offser&rating=g&lang=pt&bundle=messaging_non_clips"));
     }
     return json.decode(response.body);
   }
@@ -49,13 +48,18 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.all(15.0),
         child: Column(
           children: [
-            const TextField(
-              decoration: InputDecoration(
+            TextField(
+              decoration: const InputDecoration(
                   labelText: "Pesquise aqui!",
                   fillColor: Colors.white,
                   labelStyle: TextStyle(color: Colors.white),
                   border: OutlineInputBorder()),
-              style: TextStyle(color: Colors.white, fontSize: 18),
+              style: const TextStyle(color: Colors.white, fontSize: 18),
+              onSubmitted: (text) {
+                setState(() {
+                  _search = text;
+                });
+              },
             ),
             SizedBox(
               height: height,
@@ -86,7 +90,49 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  int _getCount(List data) {
+    if (_search.isEmpty) {
+      return data.length;
+    } else {
+      return data.length + 1;
+    }
+  }
+
   Widget _creatGifTable(BuildContext context, AsyncSnapshot snapshot) {
-    return Container();
+    return Expanded(
+      child: GridView.builder(
+          padding: const EdgeInsets.all(12),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2, crossAxisSpacing: 10, mainAxisSpacing: 10),
+          itemCount: _getCount(snapshot.data["data"]),
+          itemBuilder: (context, index) {
+            if (_search.isEmpty || index < snapshot.data["data"].length) {
+              return GestureDetector(
+                child: Image.network(
+                  snapshot.data["data"][index]["images"]["fixed_height"]["url"],
+                  fit: BoxFit.cover,
+                ),
+                onTap: () {},
+              );
+            } else {
+              return Container(
+                child: GestureDetector(
+                    child: const Column(
+                  children: [
+                    Icon(
+                      Icons.add,
+                      color: Colors.white,
+                      size: 70,
+                    ),
+                    Text(
+                      "Carregar mais...",
+                      style: TextStyle(color: Colors.white, fontSize: 22),
+                    )
+                  ],
+                )),
+              );
+            }
+          }),
+    );
   }
 }
