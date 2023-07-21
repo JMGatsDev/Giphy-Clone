@@ -1,7 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:gif/Screen/gif_screen.dart';
 import 'package:gif/constants.dart';
 import 'package:http/http.dart' as http;
+import 'package:share/share.dart';
+import 'package:transparent_image/transparent_image.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -12,7 +15,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late String _search = "";
-  int? _offser;
+  int _offset = 0;
 
   Future<Map> _getGifs() async {
     http.Response response;
@@ -20,16 +23,14 @@ class _HomeScreenState extends State<HomeScreen> {
       response = await http.get(Uri.parse(Constants.getTrading));
     } else {
       response = await http.get(Uri.parse(
-          "https://api.giphy.com/v1/gifs/search?api_key=Fga2SHVIo5A2NFKIYaJuSfyW18vOl2l8&q=$_search&limit=19&offset=$_offser&rating=g&lang=pt&bundle=messaging_non_clips"));
+          "https://api.giphy.com/v1/gifs/search?api_key=Fga2SHVIo5A2NFKIYaJuSfyW18vOl2l8&q=$_search&limit=19&offset=$_offset&rating=g&lang=pt&bundle=messaging_non_clips"));
     }
     return json.decode(response.body);
   }
 
   @override
   void initState() {
-    _getGifs().then((value) {
-      print(value);
-    });
+    _getGifs().then((value) {});
     super.initState();
   }
 
@@ -58,6 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
               onSubmitted: (text) {
                 setState(() {
                   _search = text;
+                  _offset = 0;
                 });
               },
             ),
@@ -101,23 +103,42 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _creatGifTable(BuildContext context, AsyncSnapshot snapshot) {
     return Expanded(
       child: GridView.builder(
-          padding: const EdgeInsets.all(12),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2, crossAxisSpacing: 10, mainAxisSpacing: 10),
-          itemCount: _getCount(snapshot.data["data"]),
-          itemBuilder: (context, index) {
-            if (_search.isEmpty || index < snapshot.data["data"].length) {
-              return GestureDetector(
-                child: Image.network(
-                  snapshot.data["data"][index]["images"]["fixed_height"]["url"],
-                  fit: BoxFit.cover,
-                ),
-                onTap: () {},
-              );
-            } else {
-              return Container(
-                child: GestureDetector(
-                    child: const Column(
+        padding: const EdgeInsets.all(12),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2, crossAxisSpacing: 10, mainAxisSpacing: 10),
+        itemCount: _getCount(snapshot.data["data"]),
+        itemBuilder: (context, index) {
+          if (_search.isEmpty || index < snapshot.data["data"].length) {
+            return GestureDetector(
+              child: FadeInImage.memoryNetwork(
+                placeholder: kTransparentImage,
+                image: snapshot.data["data"][index]["images"]["fixed_height"]
+                    ["url"],
+                height: 300,
+                fit: BoxFit.cover,
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) {
+                      return GifScreen(
+                        gifData: snapshot.data["data"][index],
+                      );
+                    },
+                  ),
+                );
+              },
+              onLongPress: () async {
+                return await Share.share(snapshot.data["data"][index]["images"]
+                    ["fixed_height"]["url"]);
+              },
+            );
+          } else {
+            return Center(
+              child: GestureDetector(
+                child: const Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
                       Icons.add,
@@ -129,10 +150,17 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: TextStyle(color: Colors.white, fontSize: 22),
                     )
                   ],
-                )),
-              );
-            }
-          }),
+                ),
+                onTap: () {
+                  setState(() {
+                    _offset += 19;
+                  });
+                },
+              ),
+            );
+          }
+        },
+      ),
     );
   }
 }
